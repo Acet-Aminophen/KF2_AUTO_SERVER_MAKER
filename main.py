@@ -156,7 +156,7 @@ def start_gcp_server(message_author_id: str) -> Kf2Server:
     global config_path
     global SERVER_EXPIRE_TERM_SEC
 
-    server_uid = "R" + str(random.randrange(1, 10000))
+    server_uid = "r" + str(random.randrange(1, 10000))
     server_pwd = str(random.randrange(1, 10000))
     # for saving a server conf file
     server_uuid = get_uuid()

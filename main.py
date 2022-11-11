@@ -139,10 +139,7 @@ def get_init_sequence(temp_conf_location_default_game: str):
     global CONF_FILE_SERVER_PWD
     global PROJECT_ABSOLUTE_PATH
 
-    order_list = ["#! /bin/bash", "sudo mkdir /orgserver", "sudo mount -o discard,defaults /dev/sdb /orgserver",
-                  "sudo apt update", "sudo apt install sshpass",
-                  "sudo sshpass -p '" + CONF_FILE_SERVER_PWD + "' scp -P " + CONF_FILE_SERVER_PORT + " -o StrictHostKeyChecking=no " + CONF_FILE_SERVER_USER + "@" + CONF_FILE_SERVER_IP + ":" + PROJECT_ABSOLUTE_PATH + temp_conf_location_default_game + " /orgserver/KFGame/Config/DefaultGame.ini",
-                  "cd /", "./orgserver/Binaries/Win64/KFGameSteamServer.bin.x86_64 kf-bioticslab"]
+    order_list = ["#! /bin/bash", "sudo mkdir /orgserver", "sudo mount -o discard,defaults /dev/sdb /orgserver", "sudo apt update", "sudo apt install sshpass", "sudo sshpass -p '" + CONF_FILE_SERVER_PWD + "' scp -P " + CONF_FILE_SERVER_PORT + " -o StrictHostKeyChecking=no " + CONF_FILE_SERVER_USER + "@" + CONF_FILE_SERVER_IP + ":" + PROJECT_ABSOLUTE_PATH + temp_conf_location_default_game + " /orgserver/KFGame/Config/DefaultGame.ini", "cd /", "./orgserver/Binaries/Win64/KFGameSteamServer.bin.x86_64 kf-bioticslab"]
 
     start_up_str = ""
     for order in order_list:

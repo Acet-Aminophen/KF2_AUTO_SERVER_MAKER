@@ -71,4 +71,4 @@ bUsedForTakeover=FALSE
 
 <a name="footnote_2">[2] </a>: 출처 : https://cloud.google.com/compute/docs/disks/add-persistent-disk?hl=ko
 
-<a name="footnote_3">[3] </a>: Router에서 보관하여 이름, 비밀번호를 만들 때 사용
+<a name="footnote_3">[3] </a>: KF2 ASM에서 이름, 비밀번호를 만들 때 사용

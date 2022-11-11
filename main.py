@@ -7,6 +7,7 @@ import logging.config
 import random
 import threading
 import os
+from typing import List, Dict
 from strings import *
 
 logging.config.fileConfig("logging.cfg")
@@ -42,13 +43,13 @@ client = discord.Client(intents=intents)
 
 user_dic = {}
 flag_server_creating: bool = False
-server_list: list = []
-server_dic: dict = {}
+server_list: List[Kf2Server] = []
+server_dic: Dict[str, Kf2Server] = {}
 latest_server_created: int = 0
 
-logging.info(STR_SPLITTER)
-logging.info(STR_BOOTING)
-logging.info(STR_PID + str(os.getpid()))
+logging.info(STR_LOG_SPLITTER)
+logging.info(STR_LOG_BOOTING)
+logging.info(STR_LOG_PID + str(os.getpid()))
 
 
 def get_hour_from_sec(sec: int):
@@ -59,33 +60,31 @@ def alert(content: str):
     global client
     global DEV_ID_LIST
     for id_is in DEV_ID_LIST:
-        client.loop.create_task(send_dm(id, content))
+        client.loop.create_task(send_dm(id_is, content))
 
 
 def chk_status():
-    locker = threading.Lock()
-    locker.acquire()
     global server_list
     global gce_driver
     global latest_server_created
     global client
     global SERVER_EXPIRE_TERM_SEC
     global REFRESH_SEC
-    logging.info("Server List ↓")
-    logging.info(server_list)
-    logging.info("Latest Created ↓")
-    logging.info(latest_server_created)
+
+    locker = threading.Lock()
+    locker.acquire()
+
     # 복사본으로 진행하여 remove를 하게함
-    for i in server_list[:]:
-        created_time: int = i.get("created_time")
-        expired_time: int = i.get("expired_time")
-        if created_time + expired_time < int(time.time()):
-            logging.info("Destroy node ↓")
-            logging.info(i)
-            gce_driver.destroy_node(i.get("node"))
-            message_from = i.get("message_from")
-            client.loop.create_task(send_dm(message_from, STR_ANNOUNCE_REQUESTED_SERVER_TIMEOUT))
-            server_list.remove(i)
+    for server in server_list[:]:
+        created_time: int = server.created_time
+        expired_term_sec: int = server.expired_term_sec
+        if created_time + expired_term_sec < int(time.time()):
+            logging.info(STR_LOG_DESTROY_SERVER + server.uuid)
+            gce_driver.destroy_node(server.gcp_node)
+            client.loop.create_task(send_dm(server.author_discord_id, STR_ANNOUNCE_REQUESTED_SERVER_TIMEOUT))
+            server_list.remove(server)
+            del server_dic[server.uid]
+
     locker.release()
     threading.Timer(REFRESH_SEC, chk_status).start()
 
@@ -105,7 +104,7 @@ def apply_game_config(uid: str, pwd: str, uuid: str) -> str:
         uuid)
     make_directory(temp_conf_location)
     copyfile(CONF_FILE_PATH_DEFAULT_GAME, temp_conf_location_default_game)
-    server_name = STR_SERVER_NAME_STARTS_WITH + uid
+    server_name = STR_SYS_SERVER_NAME_STARTS_WITH + uid
 
     str_org = ""
     reader = open(temp_conf_location_default_game, 'r', encoding="utf-8")
@@ -179,13 +178,16 @@ def start_gcp_server(message_author_id: str) -> Kf2Server:
                                   ex_disk_size=10, ex_metadata=metadata)
     gce_driver.attach_volume(node, vol, ex_mode="READ_WRITE", ex_auto_delete=True)
 
-    return Kf2Server(server_uid, server_pwd, server_uuid, SERVER_EXPIRE_TERM_SEC, node)
+    kf2_server = Kf2Server(server_uid, server_pwd, server_uuid, SERVER_EXPIRE_TERM_SEC, message_author_id, node)
+    logging.info(STR_LOG_REQUESTED_SERVER_STARTED + str(kf2_server))
+
+    return kf2_server
 
 
 @client.event
 async def on_ready():
-    logging.info(STR_BOT_ONLINE)
-    alert(STR_BOT_ONLINE)
+    logging.info(STR_LOG_ANNOUNCE_BOT_ONLINE)
+    alert(STR_LOG_ANNOUNCE_BOT_ONLINE)
 
 
 @client.event
@@ -234,14 +236,18 @@ def start_server(message):
     locker.acquire()
 
     flag_server_creating = True
+
     kf2_server = start_gcp_server(str(message.author.id))
     server_list.append(kf2_server)
     server_dic[kf2_server.uid] = kf2_server
     latest_server_created = kf2_server.created_time
+
     flag_server_creating = False
+
     msg = get_str_announce_requested_server_starts(kf2_server)
     alert(msg)
     client.loop.create_task(send_dm(message.author.id, msg))
+
     locker.release()
 
 
@@ -273,7 +279,7 @@ async def route_message(message):
     if not is_on_the_channel(message):
         return
     content: str = str(message.content)
-    if content == STR_SERVER_REQUEST_FLAG:
+    if content == STR_SYS_SERVER_REQUEST_FLAG:
         await route_server_request(message)
     else:
         return

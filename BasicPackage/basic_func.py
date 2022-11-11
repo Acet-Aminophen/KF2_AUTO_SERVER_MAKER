@@ -20,14 +20,18 @@ def get_time():
     return time_now
 
 
-def get_config(filepath: str, key: str, splitChar="=", comments=["#", "//"]):
+def get_config(filepath: str, key: str, splitChar="=", comments=None):
+    if comments is None:
+        comments = ["#", "//"]
     lines = load_str(filepath)
     for line in lines:
         line = line.strip()
-        if not line: continue
+        if not line:
+            continue
         is_comment = False
         for i in comments:
-            if line.startswith(i): is_comment = True
+            if line.startswith(i):
+                is_comment = True
         if is_comment:
             continue
         tkey, value = line.split(splitChar)

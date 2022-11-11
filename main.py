@@ -1,6 +1,6 @@
 from shutil import copyfile
-from BasicPackage.BasicFunc import *
-import GCEConnector
+from BasicPackage.basic_func import *
+import gce_connector
 import discord
 import logging
 import logging.config
@@ -8,6 +8,7 @@ import time
 import random
 import threading
 import os
+from strings import *
 
 logging.config.fileConfig("logging.cfg")
 config_path = "config/config.cfg"
@@ -35,7 +36,7 @@ SERVER_REQUEST_DURATION_SEC = int(get_config(config_path, "SERVER_REQUEST_DURATI
 REFRESH_SEC = int(get_config(config_path, "REFRESH_SEC"))
 SERVER_BLOCK_REQUEST_SEC = int(get_config(config_path, "SERVER_BLOCK_REQUEST_SEC"))
 
-gce_driver = GCEConnector.get_driver(GCE_ID, GCE_PW, GCE_PR)
+gce_driver = gce_connector.get_driver(GCE_ID, GCE_PW, GCE_PR)
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
@@ -44,9 +45,9 @@ flag_server_creating: bool = False
 server_list: list = []
 latest_server_created: int = int(time.time()) - 10800
 
-logging.info("--------------------------------------------------------------")
-logging.info("SERVER IS BOOTING...")
-logging.info("PID : " + str(os.getpid()))
+logging.info(STR_SPLITTER)
+logging.info(STR_BOOTING)
+logging.info(STR_PID + str(os.getpid()))
 
 
 def get_init_sequence():
@@ -101,7 +102,7 @@ def chk_status():
             logging.info(i)
             gce_driver.destroy_node(i.get("node"))
             message_from = i.get("message_from")
-            client.loop.create_task(send_dm(message_from, "요청하셨던 서버의 유효시간이 지나 종료되었습니다."))
+            client.loop.create_task(send_dm(message_from, STR_ANNOUNCE_REQUESTED_SERVER_TIMEOUT))
             server_list.remove(i)
     locker.release()
     threading.Timer(REFRESH_SEC, chk_status).start()
@@ -120,7 +121,7 @@ def chg_game_config(name: str, pwd: str, uuid: str):
         uuid)
     make_directory(temp_conf_location)
     copyfile(CONF_FILE_PATH_DEFAULT_GAME, temp_conf_location_default_game)
-    server_name = "KF2SAM|" + name
+    server_name = STR_SERVER_NAME_STARTS_WITH + name
 
     str_org = ""
     reader = open(temp_conf_location_default_game, 'r', encoding="utf-8")
@@ -164,8 +165,10 @@ def start_gcp_server(name: str, pwd: str):
     }
     volume_name = "vol-" + name
     node_name = "nod-" + name
-    vol = gce_driver.create_volume(size=30, name=volume_name, location="asia-northeast3-a", snapshot="kf2-server-origin-snp-220710")
-    node = gce_driver.create_node(name=node_name, size="e2-medium", image="ubuntu-18", location="asia-northeast3-a", ex_disk_size=10, ex_metadata=metadata)
+    vol = gce_driver.create_volume(size=30, name=volume_name, location="asia-northeast3-a",
+                                   snapshot="kf2-server-origin-snp-220710")
+    node = gce_driver.create_node(name=node_name, size="e2-medium", image="ubuntu-18", location="asia-northeast3-a",
+                                  ex_disk_size=10, ex_metadata=metadata)
     gce_driver.attach_volume(node, vol, ex_mode="READ_WRITE", ex_auto_delete=True)
     time_now = int(time.time())
     return {"name": name, "password": pwd, "server_name": server_name, "node_name": node_name,
@@ -175,8 +178,8 @@ def start_gcp_server(name: str, pwd: str):
 
 @client.event
 async def on_ready():
-    logging.info("BOT IS PREPARED")
-    alert("KF2 SAM BOT ONLINE")
+    logging.info(STR_BOT_ONLINE)
+    alert(STR_BOT_ONLINE)
 
 
 @client.event
@@ -230,9 +233,7 @@ def start_server(message):
     server_list.append(dic)
     latest_server_created = int(time.time())
     flag_server_creating = False
-    msg = "서버 초기화 완료.\n서버 부팅 시작됨.\n대략 3분 후 서버 브라우저에서 아래와 같은 사항으로 확인 가능합니다.\n\n서버 이름 : " + dic.get(
-        "server_name") + "\n서버 비밀번호 : " + dic.get("password") + "\n서버 관리 웹페이지 : http://" + dic.get(
-        "ip") + ":8080/" + "\n서버 관리 웹페이지 ID : admin\n서버 관리 웹페이지 PW : " + dic.get("password")
+    msg = get_str_announce_requested_server_starts(dic)
     alert(msg)
     client.loop.create_task(send_dm(message.author.id, msg))
     locker.release()
@@ -248,11 +249,11 @@ async def route_server_request(message):
     author: int = message.author.id
     user_requested_time = user_dic.get(str(author), 0)
     if user_requested_time + SERVER_BLOCK_REQUEST_SEC > int(time.time()):
-        await send_channel_message(message.channel.id, "서버 생성 불허.\n최근 서버를 신청한지 6시간 이내입니다.")
+        await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_TIME_TERM)
         return
 
     user_dic[str(author)] = int(time.time())
-    await send_channel_message(message.channel.id, "서버 생성 허가 완료.\n서버 생성 수립 중...\n수립이 완료되면 DM을 보내드리며 이 과정은 5분 정도 걸립니다.")
+    await send_channel_message(message.channel.id, STR_ANNOUNCE_PREPARING_SERVER)
     threading.Thread(target=start_server, args=(message,)).start()
 
 
@@ -261,7 +262,7 @@ async def route_message(message):
     if not is_on_the_channel(message):
         return
     content: str = str(message.content)
-    if content == "서버요청":
+    if content == STR_SERVER_REQUEST_FLAG:
         await route_server_request(message)
     else:
         return

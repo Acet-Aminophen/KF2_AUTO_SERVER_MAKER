@@ -1,4 +1,5 @@
 from kf2_server import Kf2Server
+import time
 
 STR_LOG_SPLITTER = "--------------------------------------------------------------"
 STR_LOG_PID = "PID : "
@@ -16,3 +17,7 @@ STR_ANNOUNCE_PREPARING_SERVER = "서버 생성 허가 완료.\n서버 생성 수
 
 def get_str_announce_requested_server_starts(kf2_server: Kf2Server):
     return "서버 초기화 완료.\n서버 부팅 시작됨.\n대략 3분 후 서버 브라우저에서 아래와 같은 사항으로 확인 가능합니다.\n\n서버 이름 : " + STR_SYS_SERVER_NAME_STARTS_WITH + kf2_server.uid + "\n서버 비밀번호 : " + kf2_server.pwd + "\n서버 관리 웹페이지 : http://" + kf2_server.ip + ":8080/" + "\n서버 관리 웹페이지 ID : admin\n서버 관리 웹페이지 PW : " + kf2_server.pwd
+
+def get_str_announce_request_rejected_reason_server_just_created(latest_created_time: int, server_request_duration_sec: int):
+    remained_time = latest_created_time + server_request_duration_sec - int(time.time())
+    return "서버 생성 불허.\n이전 요청에 따라 서버를 생성한지 얼마 되지 않았습니다.\n" + str(remained_time) + "초 이후 다시 요청해주세요."

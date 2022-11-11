@@ -272,6 +272,10 @@ async def route_server_request(message):
         await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_PERSONAL_TIME_TERM)
         return
 
+    if latest_server_created + SERVER_REQUEST_DURATION_SEC > int(time.time()):
+        await send_channel_message(message.channel.id, get_str_announce_request_rejected_reason_server_just_created(latest_server_created, SERVER_REQUEST_DURATION_SEC))
+        return
+
     user_dic[str(author)] = int(time.time())
     await send_channel_message(message.channel.id, STR_ANNOUNCE_PREPARING_SERVER)
     threading.Thread(target=start_server, args=(message,)).start()

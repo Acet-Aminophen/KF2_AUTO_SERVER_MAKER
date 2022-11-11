@@ -20,4 +20,4 @@ def get_str_announce_requested_server_starts(kf2_server: Kf2Server):
 
 def get_str_announce_request_rejected_reason_server_just_created(latest_created_time: int, server_request_duration_sec: int):
     remained_time = latest_created_time + server_request_duration_sec - int(time.time())
-    return "서버 생성 불허.\n이전 요청에 따라 서버를 생성한지 얼마 되지 않았습니다.\n" + str(remained_time) + "초 이후 다시 요청해주세요."
+    return "서버 생성 불허.\n이전 요청에 따라 서버를 생성한 지 얼마 되지 않았습니다.\n" + str(remained_time) + "초 이후 다시 요청해주세요."

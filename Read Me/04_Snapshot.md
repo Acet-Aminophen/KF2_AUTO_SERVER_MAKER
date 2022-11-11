@@ -1,4 +1,4 @@
-02_Snapshot
+04_Snapshot
 =============
 
 본 문서는 KF2 서버가 업데이트되었을 때 GCP Snapshot을 바꾸는 방법을 서술한다.  

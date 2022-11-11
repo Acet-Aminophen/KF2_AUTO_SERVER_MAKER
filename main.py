@@ -4,7 +4,6 @@ import gce_connector
 import discord
 import logging
 import logging.config
-import time
 import random
 import threading
 import os
@@ -18,6 +17,7 @@ CONF_FILE_SERVER_PORT = get_config(config_path, "CONF_FILE_SERVER_PORT")
 CONF_FILE_SERVER_USER = get_config(config_path, "CONF_FILE_SERVER_USER")
 CONF_FILE_SERVER_PWD = get_config(config_path, "CONF_FILE_SERVER_PWD")
 CONF_FILE_PATH_DEFAULT_GAME = get_config(config_path, "CONF_FILE_PATH_DEFAULT_GAME")
+CONF_DIRECTORY_PATH_TEMP_DEFAULT_GAME = get_config(config_path, "CONF_DIRECTORY_PATH_TEMP_DEFAULT_GAME")
 PROJECT_ABSOLUTE_PATH = get_config(config_path, "PROJECT_ABSOLUTE_PATH")
 
 DISCORD_SERVER_ID: int = int(get_config(config_path, "DISCORD_SERVER_ID"))
@@ -31,7 +31,7 @@ for i in TMP_DEV_IDS:
 GCE_ID = get_config(config_path, "GCE_ID")
 GCE_PW = get_config(config_path, "GCE_PW")
 GCE_PR = get_config(config_path, "GCE_PR")
-SERVER_EXPIRE_SEC = int(get_config(config_path, "SERVER_EXPIRE_SEC"))
+SERVER_EXPIRE_TERM_SEC = int(get_config(config_path, "SERVER_EXPIRE_TERM_SEC"))
 SERVER_REQUEST_DURATION_SEC = int(get_config(config_path, "SERVER_REQUEST_DURATION_SEC"))
 REFRESH_SEC = int(get_config(config_path, "REFRESH_SEC"))
 SERVER_BLOCK_PERSONAL_REQUEST_SEC = int(get_config(config_path, "SERVER_BLOCK_PERSONAL_REQUEST_SEC"))
@@ -43,30 +43,12 @@ client = discord.Client(intents=intents)
 user_dic = {}
 flag_server_creating: bool = False
 server_list: list = []
-latest_server_created: int = int(time.time()) - 10800
+server_dic: dict = {}
+latest_server_created: int = 0
 
 logging.info(STR_SPLITTER)
 logging.info(STR_BOOTING)
 logging.info(STR_PID + str(os.getpid()))
-
-
-def get_init_sequence():
-    global CONF_FILE_SERVER_IP
-    global CONF_FILE_SERVER_PORT
-    global CONF_FILE_SERVER_USER
-    global CONF_FILE_SERVER_PWD
-    global PROJECT_ABSOLUTE_PATH
-
-    order_list = ["#! /bin/bash", "sudo mkdir /orgserver", "sudo mount -o discard,defaults /dev/sdb /orgserver",
-                  "sudo apt update", "sudo apt install sshpass",
-                  "sudo sshpass -p '" + CONF_FILE_SERVER_PWD + "' scp -P " + CONF_FILE_SERVER_PORT + " -o StrictHostKeyChecking=no " + CONF_FILE_SERVER_USER + "@" + CONF_FILE_SERVER_IP + ":" + PROJECT_ABSOLUTE_PATH + CONF_FILE_PATH_DEFAULT_GAME + " /orgserver/KFGame/Config/DefaultGame.ini",
-                  "cd /", "./orgserver/Binaries/Win64/KFGameSteamServer.bin.x86_64 kf-bioticslab"]
-
-    start_up_str = ""
-    for order in order_list:
-        start_up_str += order + "\n"
-
-    return start_up_str
 
 
 def get_hour_from_sec(sec: int):
@@ -87,7 +69,7 @@ def chk_status():
     global gce_driver
     global latest_server_created
     global client
-    global SERVER_EXPIRE_SEC
+    global SERVER_EXPIRE_TERM_SEC
     global REFRESH_SEC
     logging.info("Server List ↓")
     logging.info(server_list)
@@ -109,19 +91,21 @@ def chk_status():
 
 
 def get_config_path(uuid: str):
-    temp_conf_location = "game_config/temp/" + uuid + "/"
+    global CONF_DIRECTORY_PATH_TEMP_DEFAULT_GAME
+
+    temp_conf_location = CONF_DIRECTORY_PATH_TEMP_DEFAULT_GAME + uuid + "/"
     temp_conf_location_default_game = temp_conf_location + "DefaultGame.ini"
     return temp_conf_location, temp_conf_location_default_game
 
 
-def chg_game_config(name: str, pwd: str, uuid: str):
+def apply_game_config(uid: str, pwd: str, uuid: str) -> str:
     global CONF_FILE_PATH_DEFAULT_GAME
 
     temp_conf_location, temp_conf_location_default_game = get_config_path(
         uuid)
     make_directory(temp_conf_location)
     copyfile(CONF_FILE_PATH_DEFAULT_GAME, temp_conf_location_default_game)
-    server_name = STR_SERVER_NAME_STARTS_WITH + name
+    server_name = STR_SERVER_NAME_STARTS_WITH + uid
 
     str_org = ""
     reader = open(temp_conf_location_default_game, 'r', encoding="utf-8")
@@ -146,35 +130,56 @@ def chg_game_config(name: str, pwd: str, uuid: str):
     writer = open(temp_conf_location_default_game, 'w', encoding="utf-8")
     writer.write(str_org)
     writer.close()
-    return server_name
+    return temp_conf_location_default_game
 
 
-def start_gcp_server(name: str, pwd: str):
+def get_init_sequence(temp_conf_location_default_game: str):
+    global CONF_FILE_SERVER_IP
+    global CONF_FILE_SERVER_PORT
+    global CONF_FILE_SERVER_USER
+    global CONF_FILE_SERVER_PWD
+    global PROJECT_ABSOLUTE_PATH
+
+    order_list = ["#! /bin/bash", "sudo mkdir /orgserver", "sudo mount -o discard,defaults /dev/sdb /orgserver",
+                  "sudo apt update", "sudo apt install sshpass",
+                  "sudo sshpass -p '" + CONF_FILE_SERVER_PWD + "' scp -P " + CONF_FILE_SERVER_PORT + " -o StrictHostKeyChecking=no " + CONF_FILE_SERVER_USER + "@" + CONF_FILE_SERVER_IP + ":" + PROJECT_ABSOLUTE_PATH + temp_conf_location_default_game + " /orgserver/KFGame/Config/DefaultGame.ini",
+                  "cd /", "./orgserver/Binaries/Win64/KFGameSteamServer.bin.x86_64 kf-bioticslab"]
+
+    start_up_str = ""
+    for order in order_list:
+        start_up_str += order + "\n"
+
+    return start_up_str
+
+
+def start_gcp_server(message_author_id: str) -> Kf2Server:
     global gce_driver
     global config_path
-    global SERVER_EXPIRE_SEC
+    global SERVER_EXPIRE_TERM_SEC
 
-    uuid = get_uuid()
-    server_name = chg_game_config(name, pwd, uuid)
+    server_uid = "R" + str(random.randrange(1, 10000))
+    server_pwd = str(random.randrange(1, 10000))
+    # for saving a server conf file
+    server_uuid = get_uuid()
+
+    temp_conf_location_default_game = apply_game_config(server_uid, server_pwd, server_uuid)
     metadata = {
         'items': [
             {
                 'key': 'startup-script',
-                'value': get_init_sequence()
+                'value': get_init_sequence(temp_conf_location_default_game)
             }
         ]
     }
-    volume_name = "vol-" + name
-    node_name = "nod-" + name
+    volume_name = "vol-" + server_uid
+    node_name = "nod-" + server_uid
     vol = gce_driver.create_volume(size=30, name=volume_name, location="asia-northeast3-a",
                                    snapshot=get_config(config_path, "SNAPSHOT_NAME"))
     node = gce_driver.create_node(name=node_name, size="e2-medium", image="ubuntu-18", location="asia-northeast3-a",
                                   ex_disk_size=10, ex_metadata=metadata)
     gce_driver.attach_volume(node, vol, ex_mode="READ_WRITE", ex_auto_delete=True)
-    time_now = int(time.time())
-    return {"name": name, "password": pwd, "server_name": server_name, "node_name": node_name,
-            "volume_name": volume_name,
-            "created_time": time_now, "expired_time": SERVER_EXPIRE_SEC, "ip": node.public_ips[0], "node": node}
+
+    return Kf2Server(server_uid, server_pwd, server_uuid, SERVER_EXPIRE_TERM_SEC, node)
 
 
 @client.event
@@ -222,19 +227,19 @@ def is_on_the_channel(message):
 
 
 def start_server(message):
-    locker = threading.Lock()
-    locker.acquire()
     global latest_server_created
     global flag_server_creating
+
+    locker = threading.Lock()
+    locker.acquire()
+
     flag_server_creating = True
-    server_name = "r" + str(random.randrange(1, 10000))
-    server_pwd = str(random.randrange(1, 10000))
-    dic = start_gcp_server(server_name, server_pwd)
-    dic["message_from"] = message.author.id
-    server_list.append(dic)
-    latest_server_created = int(time.time())
+    kf2_server = start_gcp_server(str(message.author.id))
+    server_list.append(kf2_server)
+    server_dic[kf2_server.uid] = kf2_server
+    latest_server_created = kf2_server.created_time
     flag_server_creating = False
-    msg = get_str_announce_requested_server_starts(dic)
+    msg = get_str_announce_requested_server_starts(kf2_server)
     alert(msg)
     client.loop.create_task(send_dm(message.author.id, msg))
     locker.release()

@@ -34,7 +34,7 @@ GCE_PR = get_config(config_path, "GCE_PR")
 SERVER_EXPIRE_SEC = int(get_config(config_path, "SERVER_EXPIRE_SEC"))
 SERVER_REQUEST_DURATION_SEC = int(get_config(config_path, "SERVER_REQUEST_DURATION_SEC"))
 REFRESH_SEC = int(get_config(config_path, "REFRESH_SEC"))
-SERVER_BLOCK_REQUEST_SEC = int(get_config(config_path, "SERVER_BLOCK_REQUEST_SEC"))
+SERVER_BLOCK_PERSONAL_REQUEST_SEC = int(get_config(config_path, "SERVER_BLOCK_PERSONAL_REQUEST_SEC"))
 
 gce_driver = gce_connector.get_driver(GCE_ID, GCE_PW, GCE_PR)
 intents = discord.Intents.all()
@@ -244,7 +244,7 @@ async def route_server_request(message):
     global flag_server_creating
     global latest_server_created
     global user_dic
-    global SERVER_BLOCK_REQUEST_SEC
+    global SERVER_BLOCK_PERSONAL_REQUEST_SEC
     global SERVER_REQUEST_DURATION_SEC
 
     author: int = message.author.id
@@ -254,7 +254,7 @@ async def route_server_request(message):
         await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_SERVER_CREATING)
         return
 
-    if user_requested_time + SERVER_BLOCK_REQUEST_SEC > int(time.time()):
+    if user_requested_time + SERVER_BLOCK_PERSONAL_REQUEST_SEC > int(time.time()):
         await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_PERSONAL_TIME_TERM)
         return
 

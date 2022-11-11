@@ -151,6 +151,7 @@ def chg_game_config(name: str, pwd: str, uuid: str):
 
 def start_gcp_server(name: str, pwd: str):
     global gce_driver
+    global config_path
     global SERVER_EXPIRE_SEC
 
     uuid = get_uuid()
@@ -166,7 +167,7 @@ def start_gcp_server(name: str, pwd: str):
     volume_name = "vol-" + name
     node_name = "nod-" + name
     vol = gce_driver.create_volume(size=30, name=volume_name, location="asia-northeast3-a",
-                                   snapshot="kf2-server-origin-snp-220710")
+                                   snapshot=get_config(config_path, "SNAPSHOT_NAME"))
     node = gce_driver.create_node(name=node_name, size="e2-medium", image="ubuntu-18", location="asia-northeast3-a",
                                   ex_disk_size=10, ex_metadata=metadata)
     gce_driver.attach_volume(node, vol, ex_mode="READ_WRITE", ex_auto_delete=True)
@@ -196,8 +197,8 @@ async def send_dm(id_is, content: str):
     try:
         location_to_send = client.get_user(int(id_is))
         await location_to_send.send(content)
-    except:
-        pass
+    except Exception as e:
+        print(str(e))
     return
 
 
@@ -205,8 +206,8 @@ async def send_channel_message(id_is, content: str):
     try:
         location_to_send = client.get_channel(int(id_is))
         await location_to_send.send(content)
-    except:
-        pass
+    except Exception as e:
+        print(str(e))
     return
 
 
@@ -248,8 +249,13 @@ async def route_server_request(message):
 
     author: int = message.author.id
     user_requested_time = user_dic.get(str(author), 0)
+
+    if flag_server_creating:
+        await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_SERVER_CREATING)
+        return
+
     if user_requested_time + SERVER_BLOCK_REQUEST_SEC > int(time.time()):
-        await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_TIME_TERM)
+        await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_PERSONAL_TIME_TERM)
         return
 
     user_dic[str(author)] = int(time.time())

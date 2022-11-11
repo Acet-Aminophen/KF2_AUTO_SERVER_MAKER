@@ -11,7 +11,7 @@ from typing import List, Dict
 from strings import *
 
 logging.config.fileConfig("logging.cfg")
-config_path = "config/config.cfg"
+config_path = "/kf2_asm_config/config.cfg"
 
 CONF_FILE_SERVER_IP = get_config(config_path, "CONF_FILE_SERVER_IP")
 CONF_FILE_SERVER_PORT = get_config(config_path, "CONF_FILE_SERVER_PORT")

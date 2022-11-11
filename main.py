@@ -47,9 +47,12 @@ server_list: List[Kf2Server] = []
 server_dic: Dict[str, Kf2Server] = {}
 latest_server_created: int = 0
 
-logging.info(STR_LOG_SPLITTER)
-logging.info(STR_LOG_BOOTING)
-logging.info(STR_LOG_PID + str(os.getpid()))
+# logging.info(STR_LOG_SPLITTER)
+# logging.info(STR_LOG_BOOTING)
+# logging.info(STR_LOG_PID + str(os.getpid()))
+print(STR_LOG_SPLITTER)
+print(STR_LOG_BOOTING)
+print(STR_LOG_PID + str(os.getpid()))
 
 
 def get_hour_from_sec(sec: int):
@@ -79,7 +82,8 @@ def chk_status():
         created_time: int = server.created_time
         expired_term_sec: int = server.expired_term_sec
         if created_time + expired_term_sec < int(time.time()):
-            logging.info(STR_LOG_DESTROY_SERVER + server.uuid)
+            # logging.info(STR_LOG_DESTROY_SERVER + server.uuid)
+            print(STR_LOG_DESTROY_SERVER + server.uuid)
             gce_driver.destroy_node(server.gcp_node)
             client.loop.create_task(send_dm(server.author_discord_id, STR_ANNOUNCE_REQUESTED_SERVER_TIMEOUT))
             server_list.remove(server)
@@ -176,21 +180,23 @@ def start_gcp_server(message_author_id: str) -> Kf2Server:
     gce_driver.attach_volume(node, vol, ex_mode="READ_WRITE", ex_auto_delete=True)
 
     kf2_server = Kf2Server(server_uid, server_pwd, server_uuid, SERVER_EXPIRE_TERM_SEC, message_author_id, node)
-    logging.info(STR_LOG_REQUESTED_SERVER_STARTED + str(kf2_server))
+
+    # logging.info(STR_LOG_REQUESTED_SERVER_STARTED + str(kf2_server))
+    print(STR_LOG_REQUESTED_SERVER_STARTED + str(kf2_server))
 
     return kf2_server
 
 
 @client.event
 async def on_ready():
-    logging.info(STR_LOG_ANNOUNCE_BOT_ONLINE)
+    # logging.info(STR_LOG_ANNOUNCE_BOT_ONLINE)
+    print(STR_LOG_ANNOUNCE_BOT_ONLINE)
     alert(STR_LOG_ANNOUNCE_BOT_ONLINE)
-
 
 @client.event
 async def on_message(message):
-    logging.info([str(message.created_at), str(message.author.id), str(message.guild.id) if message.guild else "",
-                  str(message.channel.id) if message.guild else "", str(message.content) if message.content else ""])
+    # logging.info([str(message.created_at), str(message.author.id), str(message.guild.id) if message.guild else "", str(message.channel.id) if message.guild else "", str(message.content) if message.content else ""])
+    print([str(message.created_at), str(message.author.id), str(message.guild.id) if message.guild else "", str(message.channel.id) if message.guild else "", str(message.content) if message.content else ""])
     if not message.content:
         return
     # 내용 없을 경우 종료

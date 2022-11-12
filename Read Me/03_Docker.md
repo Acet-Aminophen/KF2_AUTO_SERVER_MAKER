@@ -6,7 +6,7 @@
 1. Dockerfile은 다음과 같이 설계되며 원본 이미지는 각주를 참고한다.<sup>[[1]](#footnote_1)</sup>
 ```
 # VERSION : 2
-# docker build --build-arg USERID=userid -t kf2server:r2 .
+# docker build --build-arg USERID=userid -t kf2asm:r2 .
 
 FROM ubu:r9
 
@@ -21,7 +21,7 @@ RUN cat /password | sudo -S printf "cat /password | sudo -S service ssh start\ne
 2. 만들어진 이미지를 토대로 다음의 예시를 활용하여 실행한다.
 ```
 # config 폴더의 경로는 무조건 컨테이너 내부 /kf2_asm_config로 맞추어져야 한다.
-docker run -d --name kf2server -p 8460:22 --restart=always -v /home/changeme/kf2_asm_config:/kf2_asm_config kf2server:r2
+docker run -d --name kf2asm -p 8460:22 --restart=always -v /home/changeme/kf2_asm_config:/kf2_asm_config kf2asm:r2
 ```
 
 <a name="footnote_1">[1]</a>: https://github.com/Acet-Aminophen/Dockerfiles/blob/main/ubu.txt

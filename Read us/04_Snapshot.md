@@ -11,7 +11,7 @@ asia-northeast3(서울)
 10GB
 ```
 
-2. Create a connection using SSH, and install the Steam CMD in the following procedure.<sup>[[1]](#footnote_1)</sup>
+2. Create a connection using SSH, and install Steam CMD in the following procedure.<sup>[[1]](#footnote_1)</sup>
 
 ```
 # You can copy and paste.

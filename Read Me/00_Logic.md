@@ -1,8 +1,8 @@
 00_Logic
 =============
 
-본 문서는 프로젝트의 로직을 설명한다.
+This document describes the logic of the project.
 
-### 개요도
+### Blueprint
 ![img1](pic1.png)
-- KF2 ASM은 Docker Container 환경에서 구동됨을 기반으로 한다.
+- KF2 ASM is based on running in a Docker Container environment.

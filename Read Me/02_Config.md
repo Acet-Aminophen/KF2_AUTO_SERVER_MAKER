@@ -1,9 +1,9 @@
 02_Config
 =============
 
-본 문서는 프로그램의 실행에 필요한 Config 폴더 속 파일들에 대해 서술한다.
+This document describes the files in the Config directory to run the KF2 ASM.
 
-1. config.cfg, 다음과 같은 구조를 가진다.
+1. config.cfg, It has the following structure.
 ```
 DISCORD_SERVER_ID = 
 DISCORD_REQUEST_CHANNEL_ID = 
@@ -14,7 +14,7 @@ DEV_IDS = []
 GCE_ID = 
 GCE_PW = /kf2_asm_config/key
 GCE_PR = 
-# 아래 두 개는 실시간으로 인식함
+# The KF2 ASM recognizes the two below in real time.
 SNAPSHOT_NAME = 
 OS_IMAGE_NAME = 
 
@@ -32,7 +32,7 @@ CONF_FILE_PATH_DEFAULT_GAME=game_config/DefaultGame.ini
 CONF_DIRECTORY_PATH_TEMP_DEFAULT_GAME=game_config/temp/
 ```
 
-2. key, GCP 프로젝트 키 문서로 다음과 같은 구조를 가진다.
+2. key, The GCP project key, and it has the following structure.
 ```
 {
   "type": "",

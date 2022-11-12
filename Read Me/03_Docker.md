@@ -1,9 +1,9 @@
 03_Docker
 =============
 
-본 문서는 프로그램 실행의 기반이 되는 Docker 환경에 대하여 서술한다.
+This document describes the Docker environment for KF2 ASM
 
-1. Dockerfile은 다음과 같이 설계되며 원본 이미지는 각주를 참고한다.<sup>[[1]](#footnote_1)</sup>
+1. The Dockerfile has the following structure. You can find the original image in the footnote.<sup>[[1]](#footnote_1)</sup>
 ```
 # VERSION : 2
 # docker build --build-arg USERID=userid -t kf2asm:r2 .
@@ -18,9 +18,9 @@ RUN cat /password | sudo -S pip3 install cryptography==38.0.3
 RUN cat /password | sudo -S printf "cat /password | sudo -S service ssh start\nexport LC_ALL=ko_KR.UTF-8\n\n\necho \"SUCCESSFULLY STARTED\"\n\ncat /password | sudo -S rm -rf /kf2_asm\ncat /password | sudo -S git clone https://github.com/Acet-Aminophen/KF2_AUTO_SERVER_MAKER.git /kf2_asm\ncd /kf2_asm\ncat /password | sudo -S python3 -u /kf2_asm/main.py\n" > starter.sh
 ```
 
-2. 만들어진 이미지를 토대로 다음의 예시를 활용하여 실행한다.
+2. Based on the created image, Execute using the following example.
 ```
-# config 폴더의 경로는 무조건 컨테이너 내부 /kf2_asm_config로 맞추어져야 한다.
+# You must set the config directory path's destination as /kf2_asm_config in the container.
 docker run -d --name kf2asm -p 8460:22 --restart=always -v /home/changeme/kf2_asm_config:/kf2_asm_config kf2asm:r2
 ```
 

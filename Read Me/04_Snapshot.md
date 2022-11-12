@@ -7,11 +7,12 @@ This document describes changing the GCP Snapshot when the KF2 server is updated
 ```
 e2-medium
 Ubuntu 20.04
-asia-northeast3(서울)
+# in my case
+asia-northeast3(Seoul)
 10GB
 ```
 
-2. Create a connection using SSH, and install the Steam CMD in the following procedure.<sup>[[1]](#footnote_1)</sup>
+2. Create a connection using SSH, and install Steam CMD in the following procedure.<sup>[[1]](#footnote_1)</sup>
 
 ```
 # You can copy and paste.

@@ -1,4 +1,4 @@
-04_Snapshot
+04_GCP_Snapshot
 =============
 
 This document describes changing the GCP Snapshot when the KF2 server is updated.
@@ -7,7 +7,8 @@ This document describes changing the GCP Snapshot when the KF2 server is updated
 ```
 e2-medium
 Ubuntu 20.04
-asia-northeast3(서울)
+# in my case
+asia-northeast3(Seoul)
 10GB
 ```
 

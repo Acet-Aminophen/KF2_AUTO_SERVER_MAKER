@@ -72,4 +72,4 @@ bUsedForTakeover=FALSE
 
 <a name="footnote_2">[2] </a>: Source : https://cloud.google.com/compute/docs/disks/add-persistent-disk?hl=ko
 
-<a name="footnote_3">[3] </a>: It will be used when KF2 ASM makes the server name and password.
+<a name="footnote_3">[3] </a>: It will be used when KF2 ASM makes a server name and password.

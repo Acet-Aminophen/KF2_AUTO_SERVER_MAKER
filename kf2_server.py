@@ -12,6 +12,7 @@ class Kf2Server:
         self.gcp_node = gcp_node
         self.created_time = int(time.time())
         self.ip = gcp_node.public_ips[0]
+        self.warned = False
 
     def __str__(self):
         # will be changed to DB

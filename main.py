@@ -35,7 +35,11 @@ GCE_PR = get_config(config_path, "GCE_PR")
 SERVER_EXPIRE_TERM_SEC = int(get_config(config_path, "SERVER_EXPIRE_TERM_SEC"))
 SERVER_REQUEST_DURATION_SEC = int(get_config(config_path, "SERVER_REQUEST_DURATION_SEC"))
 REFRESH_SEC = int(get_config(config_path, "REFRESH_SEC"))
-SERVER_BLOCK_PERSONAL_REQUEST_SEC = int(get_config(config_path, "SERVER_BLOCK_PERSONAL_REQUEST_SEC"))
+BLOCKING_PERSONAL_REQUEST_SEC = int(get_config(config_path, "BLOCKING_PERSONAL_REQUEST_SEC"))
+WARNING_SERVER_EXPIRED_SEC = int(get_config(config_path, "WARNING_SERVER_EXPIRED_SEC"))
+SERVER_ADDITIONAL_TIME_SEC = int(get_config(config_path, "SERVER_ADDITIONAL_TIME_SEC"))
+STR_ANNOUNCE_ADDITIONAL_TIME_ADDED = get_config(config_path, "STR_ANNOUNCE_ADDITIONAL_TIME_ADDED")
+STR_ANNOUNCE_WARNING_NO_SERVER = get_config(config_path, "STR_ANNOUNCE_WARNING_NO_SERVER")
 
 gce_driver = gce_connector.get_driver(GCE_ID, GCE_PW, GCE_PR)
 intents = discord.Intents.all()
@@ -73,6 +77,7 @@ def chk_status():
     global client
     global SERVER_EXPIRE_TERM_SEC
     global REFRESH_SEC
+    global WARNING_SERVER_EXPIRED_SEC
 
     locker = threading.Lock()
     locker.acquire()
@@ -81,6 +86,11 @@ def chk_status():
     for server in server_list[:]:
         created_time: int = server.created_time
         expired_term_sec: int = server.expired_term_sec
+
+        if created_time + expired_term_sec < int(time.time()) + WARNING_SERVER_EXPIRED_SEC and not server.warned:
+            client.loop.create_task(send_dm(server.author_discord_id, STR_ANNOUNCE_WARNING_SERVER_EXPIRED_SOON))
+            server.warned = True
+
         if created_time + expired_term_sec < int(time.time()):
             # logging.info(STR_LOG_DESTROY_SERVER + server.uuid)
             print(STR_LOG_DESTROY_SERVER + server.uuid)
@@ -143,7 +153,10 @@ def get_init_sequence(temp_conf_location_default_game: str):
     global CONF_FILE_SERVER_PWD
     global PROJECT_ABSOLUTE_PATH
 
-    order_list = ["#! /bin/bash", "sudo mkdir /orgserver", "sudo mount -o discard,defaults /dev/sdb /orgserver", "sudo apt update", "sudo apt install sshpass", "sudo sshpass -p '" + CONF_FILE_SERVER_PWD + "' scp -P " + CONF_FILE_SERVER_PORT + " -o StrictHostKeyChecking=no " + CONF_FILE_SERVER_USER + "@" + CONF_FILE_SERVER_IP + ":" + PROJECT_ABSOLUTE_PATH + temp_conf_location_default_game + " /orgserver/KFGame/Config/DefaultGame.ini", "cd /", "./orgserver/Binaries/Win64/KFGameSteamServer.bin.x86_64 kf-bioticslab"]
+    order_list = ["#! /bin/bash", "sudo mkdir /orgserver", "sudo mount -o discard,defaults /dev/sdb /orgserver",
+                  "sudo apt update", "sudo apt install sshpass",
+                  "sudo sshpass -p '" + CONF_FILE_SERVER_PWD + "' scp -P " + CONF_FILE_SERVER_PORT + " -o StrictHostKeyChecking=no " + CONF_FILE_SERVER_USER + "@" + CONF_FILE_SERVER_IP + ":" + PROJECT_ABSOLUTE_PATH + temp_conf_location_default_game + " /orgserver/KFGame/Config/DefaultGame.ini",
+                  "cd /", "./orgserver/Binaries/Win64/KFGameSteamServer.bin.x86_64 kf-bioticslab"]
 
     start_up_str = ""
     for order in order_list:
@@ -175,7 +188,8 @@ def start_gcp_server(message_author_id: str) -> Kf2Server:
     node_name = "nod-" + server_uid
     vol = gce_driver.create_volume(size=30, name=volume_name, location="asia-northeast3-a",
                                    snapshot=get_config(config_path, "SNAPSHOT_NAME"))
-    node = gce_driver.create_node(name=node_name, size="e2-medium", image=get_config(config_path, "OS_IMAGE_NAME"), location="asia-northeast3-a",
+    node = gce_driver.create_node(name=node_name, size="e2-medium", image=get_config(config_path, "OS_IMAGE_NAME"),
+                                  location="asia-northeast3-a",
                                   ex_disk_size=10, ex_metadata=metadata)
     gce_driver.attach_volume(node, vol, ex_mode="READ_WRITE", ex_auto_delete=True)
 
@@ -193,10 +207,12 @@ async def on_ready():
     print(STR_LOG_ANNOUNCE_BOT_ONLINE)
     alert(STR_LOG_ANNOUNCE_BOT_ONLINE)
 
+
 @client.event
 async def on_message(message):
     # logging.info([str(message.created_at), str(message.author.id), str(message.guild.id) if message.guild else "", str(message.channel.id) if message.guild else "", str(message.content) if message.content else ""])
-    print([str(message.created_at), str(message.author.id), str(message.guild.id) if message.guild else "", str(message.channel.id) if message.guild else "", str(message.content) if message.content else ""])
+    print([str(message.created_at), str(message.author.id), str(message.guild.id) if message.guild else "",
+           str(message.channel.id) if message.guild else "", str(message.content) if message.content else ""])
     if not message.content:
         return
     # 내용 없을 경우 종료
@@ -258,7 +274,7 @@ async def route_server_request(message):
     global flag_server_creating
     global latest_server_created
     global user_dic
-    global SERVER_BLOCK_PERSONAL_REQUEST_SEC
+    global BLOCKING_PERSONAL_REQUEST_SEC
     global SERVER_REQUEST_DURATION_SEC
 
     author: int = message.author.id
@@ -268,12 +284,14 @@ async def route_server_request(message):
         await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_SERVER_CREATING)
         return
 
-    if user_requested_time + SERVER_BLOCK_PERSONAL_REQUEST_SEC > int(time.time()):
+    if user_requested_time + BLOCKING_PERSONAL_REQUEST_SEC > int(time.time()):
         await send_channel_message(message.channel.id, STR_ANNOUNCE_REQUEST_REJECTED_REASON_PERSONAL_TIME_TERM)
         return
 
     if latest_server_created + SERVER_REQUEST_DURATION_SEC > int(time.time()):
-        await send_channel_message(message.channel.id, get_str_announce_request_rejected_reason_server_just_created(latest_server_created, SERVER_REQUEST_DURATION_SEC))
+        await send_channel_message(message.channel.id,
+                                   get_str_announce_request_rejected_reason_server_just_created(latest_server_created,
+                                                                                                SERVER_REQUEST_DURATION_SEC))
         return
 
     user_dic[str(author)] = int(time.time())
@@ -281,13 +299,36 @@ async def route_server_request(message):
     threading.Thread(target=start_server, args=(message,)).start()
 
 
+async def route_server_request_additional_time(message):
+    global SERVER_ADDITIONAL_TIME_SEC
+    global STR_ANNOUNCE_ADDITIONAL_TIME_ADDED
+    global STR_ANNOUNCE_WARNING_NO_SERVER
+
+    locker = threading.Lock()
+    locker.acquire()
+
+    flag = False
+    for server in server_list[:]:
+        if str(server.author_discord_id) == str(message.author.id):
+            flag = True
+            server.expired_term_sec += SERVER_ADDITIONAL_TIME_SEC
+            server.warned = False
+            break
+
+    if flag:
+        await send_dm(str(message.author.id), STR_ANNOUNCE_ADDITIONAL_TIME_ADDED)
+    else:
+        await send_dm(str(message.author.id), STR_ANNOUNCE_WARNING_NO_SERVER)
+
+    locker.release()
+
+
 async def route_message(message):
-    # 채널 메세지 아니면 종료
-    if not is_on_the_channel(message):
-        return
     content: str = str(message.content)
-    if content == STR_SYS_SERVER_REQUEST_FLAG:
+    if is_on_the_channel(message) and content == STR_SYS_SERVER_REQUEST_FLAG:
         await route_server_request(message)
+    elif content == STR_SYS_SERVER_REQUEST_ADDITIONAL_TIME_FLAG:
+        await route_server_request_additional_time(message)
     else:
         return
 

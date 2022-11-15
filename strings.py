@@ -15,8 +15,9 @@ STR_ANNOUNCE_REQUEST_REJECTED_REASON_SERVER_CREATING = "서버 생성 불허.\n�
 STR_ANNOUNCE_REQUEST_REJECTED_REASON_PERSONAL_TIME_TERM = "서버 생성 불허.\n최근 서버를 신청한지 6시간 이내입니다."
 STR_ANNOUNCE_PREPARING_SERVER = "서버 생성 허가 완료.\n서버 생성 수립 중...\n수립이 완료되면 DM을 보내드리며 이 과정은 5분 정도 걸립니다."
 STR_ANNOUNCE_WARNING_SERVER_EXPIRED_SOON = "서버 만료까지 1시간 남았습니다.\n'연장요청' 입력 시 1시간이 추가됩니다."
-STR_ANNOUNCE_ADDITIONAL_TIME_ADDED = "연장 완료"
-STR_ANNOUNCE_WARNING_NO_SERVER = "현재 활성화된 서버가 없습니다"
+STR_ANNOUNCE_ADDITIONAL_TIME_ADDED = "연장 완료."
+STR_ANNOUNCE_WARNING_NO_SERVER = "현재 활성화된 서버가 없습니다."
+STR_ANNOUNCE_WARNING_NOT_POSSIBLE_TIME = "시간 연장은 만료 1시간 전부터 가능합니다."
 
 
 def get_str_announce_requested_server_starts(kf2_server: Kf2Server):

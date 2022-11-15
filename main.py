@@ -68,7 +68,7 @@ def alert(content: str):
         client.loop.create_task(send_dm(id_is, content))
 
 
-def is_server_valid_to_add_time(server: Kf2Server):
+def is_server_possible_to_add_time(server: Kf2Server):
     global WARNING_SERVER_EXPIRED_SEC
 
     if server.created_time + server.expired_term_sec < int(time.time()) + WARNING_SERVER_EXPIRED_SEC:
@@ -94,7 +94,7 @@ def chk_status():
         created_time: int = server.created_time
         expired_term_sec: int = server.expired_term_sec
 
-        if is_server_valid_to_add_time(server) and not server.warned:
+        if is_server_possible_to_add_time(server) and not server.warned:
             client.loop.create_task(send_dm(server.author_discord_id, STR_ANNOUNCE_WARNING_SERVER_EXPIRED_SOON))
             server.warned = True
 
@@ -314,15 +314,18 @@ async def route_server_request_additional_time(message):
 
     flag = False
     for server in server_list[:]:
-        if str(server.author_discord_id) == str(message.author.id) and is_server_valid_to_add_time(server):
-            flag = True
-            server.expired_term_sec += SERVER_ADDITIONAL_TIME_SEC
-            server.warned = False
-            break
+        if str(server.author_discord_id) == str(message.author.id):
+            if is_server_possible_to_add_time(server):
+                flag = True
+                server.expired_term_sec += SERVER_ADDITIONAL_TIME_SEC
+                server.warned = False
+                await send_dm(str(message.author.id), STR_ANNOUNCE_ADDITIONAL_TIME_ADDED)
+                break
+            else:
+                await send_dm(str(message.author.id), STR_ANNOUNCE_WARNING_NOT_POSSIBLE_TIME)
+                break
 
-    if flag:
-        await send_dm(str(message.author.id), STR_ANNOUNCE_ADDITIONAL_TIME_ADDED)
-    else:
+    if not flag:
         await send_dm(str(message.author.id), STR_ANNOUNCE_WARNING_NO_SERVER)
 
     locker.release()

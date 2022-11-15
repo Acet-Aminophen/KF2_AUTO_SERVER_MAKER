@@ -38,8 +38,6 @@ REFRESH_SEC = int(get_config(config_path, "REFRESH_SEC"))
 BLOCKING_PERSONAL_REQUEST_SEC = int(get_config(config_path, "BLOCKING_PERSONAL_REQUEST_SEC"))
 WARNING_SERVER_EXPIRED_SEC = int(get_config(config_path, "WARNING_SERVER_EXPIRED_SEC"))
 SERVER_ADDITIONAL_TIME_SEC = int(get_config(config_path, "SERVER_ADDITIONAL_TIME_SEC"))
-STR_ANNOUNCE_ADDITIONAL_TIME_ADDED = get_config(config_path, "STR_ANNOUNCE_ADDITIONAL_TIME_ADDED")
-STR_ANNOUNCE_WARNING_NO_SERVER = get_config(config_path, "STR_ANNOUNCE_WARNING_NO_SERVER")
 
 gce_driver = gce_connector.get_driver(GCE_ID, GCE_PW, GCE_PR)
 intents = discord.Intents.all()
@@ -70,6 +68,15 @@ def alert(content: str):
         client.loop.create_task(send_dm(id_is, content))
 
 
+def is_server_valid_to_add_time(server: Kf2Server):
+    global WARNING_SERVER_EXPIRED_SEC
+
+    if server.created_time + server.expired_term_sec < int(time.time()) + WARNING_SERVER_EXPIRED_SEC:
+        return True
+    else:
+        return False
+
+
 def chk_status():
     global server_list
     global gce_driver
@@ -87,7 +94,7 @@ def chk_status():
         created_time: int = server.created_time
         expired_term_sec: int = server.expired_term_sec
 
-        if created_time + expired_term_sec < int(time.time()) + WARNING_SERVER_EXPIRED_SEC and not server.warned:
+        if is_server_valid_to_add_time(server) and not server.warned:
             client.loop.create_task(send_dm(server.author_discord_id, STR_ANNOUNCE_WARNING_SERVER_EXPIRED_SOON))
             server.warned = True
 
@@ -301,15 +308,13 @@ async def route_server_request(message):
 
 async def route_server_request_additional_time(message):
     global SERVER_ADDITIONAL_TIME_SEC
-    global STR_ANNOUNCE_ADDITIONAL_TIME_ADDED
-    global STR_ANNOUNCE_WARNING_NO_SERVER
 
     locker = threading.Lock()
     locker.acquire()
 
     flag = False
     for server in server_list[:]:
-        if str(server.author_discord_id) == str(message.author.id):
+        if str(server.author_discord_id) == str(message.author.id) and is_server_valid_to_add_time(server):
             flag = True
             server.expired_term_sec += SERVER_ADDITIONAL_TIME_SEC
             server.warned = False

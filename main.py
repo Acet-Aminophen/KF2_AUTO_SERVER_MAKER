@@ -312,11 +312,11 @@ async def route_server_request_additional_time(message):
     locker = threading.Lock()
     locker.acquire()
 
-    flag = False
+    flag_server_existence = False
     for server in server_list[:]:
         if str(server.author_discord_id) == str(message.author.id):
+            flag_server_existence = True
             if is_server_possible_to_add_time(server):
-                flag = True
                 server.expired_term_sec += SERVER_ADDITIONAL_TIME_SEC
                 server.warned = False
                 await send_dm(str(message.author.id), STR_ANNOUNCE_ADDITIONAL_TIME_ADDED)
@@ -325,7 +325,7 @@ async def route_server_request_additional_time(message):
                 await send_dm(str(message.author.id), STR_ANNOUNCE_WARNING_NOT_POSSIBLE_TIME)
                 break
 
-    if not flag:
+    if not flag_server_existence:
         await send_dm(str(message.author.id), STR_ANNOUNCE_WARNING_NO_SERVER)
 
     locker.release()

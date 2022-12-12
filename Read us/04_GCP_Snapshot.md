@@ -24,7 +24,7 @@ sudo apt update
 sudo apt install lib32gcc-s1 steamcmd
 ```
 
-3. Format and mount an additional disk.<sup>[[2]](#footnote_2)</sup>
+3. Format and mount the additional disk.<sup>[[2]](#footnote_2)</sup>
 ```
 # Check the disk
 sudo lsblk

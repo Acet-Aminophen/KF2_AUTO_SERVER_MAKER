@@ -1,7 +1,7 @@
 04_GCP_Snapshot
 =============
 
-This document describes changing the GCP Snapshot when the KF2 server is updated.
+This document describes the way to change the GCP Snapshot when the KF2 server is updated.
 
 1. Create an instance of the following specifications with an additional 30GB disk.
 ```

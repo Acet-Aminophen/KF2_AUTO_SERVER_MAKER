@@ -34,7 +34,7 @@ CONF_FILE_PATH_DEFAULT_GAME=game_config/DefaultGame.ini
 CONF_DIRECTORY_PATH_TEMP_DEFAULT_GAME=game_config/temp/
 ```
 
-2. key, The GCP project key, and it has the following structure.
+2. key, The GCP project key, and it has the following structure. You can get more infos in [here.](https://libcloud.readthedocs.io/en/stable/compute/drivers/gce.html)
 ```
 {
   "type": "",

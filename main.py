@@ -193,7 +193,7 @@ def start_gcp_server(message_author_id: str) -> Kf2Server:
     }
     volume_name = "vol-" + server_uid
     node_name = "nod-" + server_uid
-    vol = gce_driver.create_volume(size=30, name=volume_name, location="asia-northeast3-a",
+    vol = gce_driver.create_volume(size=50, name=volume_name, location="asia-northeast3-a",
                                    snapshot=get_config(config_path, "SNAPSHOT_NAME"))
     node = gce_driver.create_node(name=node_name, size="e2-medium", image=get_config(config_path, "OS_IMAGE_NAME"),
                                   location="asia-northeast3-a",

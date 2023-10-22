@@ -3,7 +3,7 @@
 
 This document describes the way to change the GCP Snapshot when the KF2 server is updated.
 
-1. Create an instance of the following specifications with an additional 30GB disk.
+1. Create an instance of the following specifications **with an additional 50GB disk.**
 ```
 e2-medium
 Ubuntu 20.04
